@@ -2,7 +2,7 @@
   <div class="advanced-search">
     <h2>Advanced Pokémon Search</h2>
 
-    <!-- Search History Section -->
+
     <div class="search-history" v-if="searchHistory.length > 0">
       <h3>Search History ({{ searchHistory.length }})</h3>
       <div class="history-items">
@@ -308,7 +308,6 @@ const searchHistory = ref([]);
 const showConfirmation = ref(false);
 const deleteIndex = ref(null);
 
-// Computed properties
 const isFormValid = computed(() => {
   return Object.values(errors.value).every(error => !error);
 });
@@ -324,12 +323,11 @@ const hasSearchCriteria = computed(() => {
       searchParams.value.minDefense !== null;
 });
 
-// Lifecycle hook
 onMounted(() => {
   loadSearchHistory();
 });
 
-// Utility functions
+
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
@@ -355,7 +353,7 @@ function clearError(field) {
   errors.value[field] = '';
 }
 
-// Storage functions
+
 function loadSearchHistory() {
   const savedHistory = localStorage.getItem('pokemonSearchHistory');
   if (savedHistory) {
@@ -372,11 +370,11 @@ function saveSearchHistory() {
   localStorage.setItem('pokemonSearchHistory', JSON.stringify(searchHistory.value));
 }
 
-// Form functions
+
 function validateForm() {
   let isValid = true;
 
-  // Clear previous errors
+
   errors.value = {
     name: '',
     type: '',
@@ -386,13 +384,13 @@ function validateForm() {
     minDefense: ''
   };
 
-  // Validate name (if provided)
+
   if (searchParams.value.name && searchParams.value.name.length < 2) {
     errors.value.name = 'Name must be at least 2 characters';
     isValid = false;
   }
 
-  // Validate stats (if provided)
+
   if (searchParams.value.minHp !== null) {
     if (isNaN(searchParams.value.minHp) || searchParams.value.minHp < 1 || searchParams.value.minHp > 255) {
       errors.value.minHp = 'HP must be between 1 and 255';
@@ -414,7 +412,7 @@ function validateForm() {
     }
   }
 
-  // Validate at least one search criteria is provided
+
   if (!hasSearchCriteria.value) {
     errors.value.name = 'Please provide at least one search criteria';
     isValid = false;
@@ -455,15 +453,15 @@ function saveSearch() {
     timestamp: new Date().toISOString()
   };
 
-  // Add to history
+
   searchHistory.value.unshift(searchToSave);
 
-  // Keep only last 10 searches
+
   if (searchHistory.value.length > 10) {
     searchHistory.value = searchHistory.value.slice(0, 10);
   }
 
-  // Save to localStorage
+
   saveSearchHistory();
 }
 
@@ -480,7 +478,7 @@ function loadSearch(savedSearch) {
     sortBy: savedSearch.sortBy || 'id'
   };
 
-  // Trigger search automatically
+
   validateAndSearch();
 }
 
@@ -506,7 +504,7 @@ function clearAllHistory() {
   localStorage.removeItem('pokemonSearchHistory');
 }
 
-// Search functions
+
 async function fetchPokemonDetails(url) {
   if (pokemonDetailsCache.value[url]) {
     return pokemonDetailsCache.value[url];
@@ -530,8 +528,8 @@ async function fetchPokemonDetails(url) {
         attack: data.stats?.find(s => s.stat.name === 'attack')?.base_stat || 0,
         defense: data.stats?.find(s => s.stat.name === 'defense')?.base_stat || 0
       },
-      isLegendary: false, // Would need species data
-      isMythical: false,  // Would need species data
+      isLegendary: false,
+      isMythical: false,
       generation: determineGeneration(data.id)
     };
 
@@ -581,7 +579,7 @@ async function performSearch() {
   searchResults.value = [];
 
   try {
-    // First filter by name if specified
+
     let filteredPokemon = pokemonList;
     if (searchParams.value.name) {
       filteredPokemon = filteredPokemon.filter(pokemon =>
@@ -589,21 +587,18 @@ async function performSearch() {
       );
     }
 
-    // Fetch details for filtered Pokémon
     const pokemonDetails = await Promise.all(
         filteredPokemon.map(pokemon => fetchPokemonDetails(pokemon.url))
     );
 
-    // Apply additional filters
     searchResults.value = pokemonDetails
         .filter(pokemon => pokemon !== null)
         .filter(pokemon => {
-          // Type filter
+
           if (searchParams.value.type && !pokemon.types.includes(searchParams.value.type)) {
             return false;
           }
 
-          // Stats filters
           if (searchParams.value.minHp !== null && pokemon.stats.hp < searchParams.value.minHp) {
             return false;
           }
@@ -616,7 +611,6 @@ async function performSearch() {
             return false;
           }
 
-          // Generation filter
           if (searchParams.value.generation && pokemon.generation !== searchParams.value.generation) {
             return false;
           }
@@ -624,7 +618,6 @@ async function performSearch() {
           return true;
         });
 
-    // Apply initial sorting
     performSort();
 
   } catch (error) {
@@ -657,508 +650,6 @@ function exportResults() {
 </script>
 
 <style scoped>
-/* Base Styles */
-.advanced-search {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  color: var(--pokedex-text);
-}
-
-h2, h3 {
-  color: var(--pokedex-red);
-  margin-bottom: 1.5rem;
-}
-
-h2 {
-  font-size: 2rem;
-  text-align: center;
-  border-bottom: 2px solid var(--pokedex-red);
-  padding-bottom: 1rem;
-}
-
-h3 {
-  font-size: 1.5rem;
-}
-
-/* Form Styles */
-.search-form {
-  background-color: #f9fafb;
-  border-radius: 12px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  border: 1px solid #e5e7eb;
-}
-
-.form-row {
-  display: flex;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.form-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group label {
-  margin-bottom: 0.5rem;
-  font-weight: bold;
-  color: var(--pokedex-dark-red);
-}
-
-.form-group input,
-.form-group select {
-  padding: 0.75rem;
-  border: 2px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.3s;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  border-color: var(--pokedex-red);
-  outline: none;
-}
-
-.filter-group {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background-color: white;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-}
-
-.filter-group label {
-  display: block;
-  margin-bottom: 1rem;
-  font-weight: bold;
-  color: var(--pokedex-dark-red);
-}
-
-.radio-group, .checkbox-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.radio-group label, .checkbox-group label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: normal;
-  cursor: pointer;
-}
-
-.stat-filters {
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.stat-input {
-  display: flex;
-  flex-direction: column;
-  min-width: 100px;
-}
-
-.stat-input label {
-  margin-bottom: 0.5rem;
-  font-weight: normal;
-}
-
-.stat-input input {
-  width: 100%;
-}
-
-.actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1.5rem;
-  flex-wrap: wrap;
-}
-
-/* Button Styles */
-.menu-button {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-  flex: 1;
-  min-width: 120px;
-}
-
-.menu-button.primary {
-  background-color: var(--pokedex-red);
-  color: white;
-}
-
-.menu-button.secondary {
-  background-color: var(--pokedex-screen-bg);
-  color: var(--pokedex-text);
-}
-
-.menu-button.tertiary {
-  background-color: var(--pokedex-button-yellow);
-  color: var(--pokedex-text);
-}
-
-.menu-button.danger {
-  background-color: var(--pokedex-button-red);
-  color: white;
-}
-
-.menu-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.menu-button:not(:disabled):hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.menu-button.primary:not(:disabled):hover {
-  background-color: var(--pokedex-dark-red);
-}
-
-.menu-button.secondary:not(:disabled):hover {
-  background-color: #d1d5db;
-}
-
-.menu-button.tertiary:not(:disabled):hover {
-  background-color: #d97706;
-  color: white;
-}
-
-.menu-button.danger:not(:disabled):hover {
-  background-color: #dc2626;
-}
-
-.small-button {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  background-color: var(--pokedex-button-blue);
-  color: white;
-  transition: opacity 0.3s;
-}
-
-.small-button.delete {
-  background-color: var(--pokedex-button-red);
-}
-
-.small-button:hover {
-  opacity: 0.9;
-}
-
-/* Error Styles */
-.error-message {
-  color: var(--pokedex-button-red);
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
-  height: 1rem;
-  display: block;
-}
-
-/* Loading Indicator */
-.loading-indicator {
-  margin: 2rem 0;
-  text-align: center;
-}
-
-.loading-spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  border-top: 4px solid var(--pokedex-red);
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 1rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Search History */
-.search-history {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-}
-
-.history-items {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.history-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background-color: white;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  transition: transform 0.3s;
-}
-
-.history-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.history-details {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.history-details span {
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.history-details strong {
-  font-weight: bold;
-}
-
-.history-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-
-.pokemon-list-container {
-  margin-top: 2rem;
-}
-
-.results-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.sort-options {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.sort-options select {
-  padding: 0.5rem;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-}
-
-.pokedex-scroll-container {
-  position: relative;
-  width: 100%;
-  margin-top: 1rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 1rem;
-}
-
-.pokedex-device {
-  background-color: var(--pokedex-red);
-  border-radius: 15px 15px 15px 50px / 15px 15px 15px 15px;
-  padding: 1.5rem;
-  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(0, 0, 0, 0.2);
-  border: 3px solid var(--pokedex-dark-red);
-  display: inline-flex;
-  gap: 1.5rem;
-  width: auto;
-  min-width: 100%;
-}
-
-
-.pokedex-scroll-container::-webkit-scrollbar {
-  height: 8px;
-}
-
-.pokedex-scroll-container::-webkit-scrollbar-track {
-  background: var(--pokedex-red);
-  border-radius: 10px;
-}
-
-.pokedex-scroll-container::-webkit-scrollbar-thumb {
-  background-color: var(--pokedex-dark-red);
-  border-radius: 10px;
-}
-
-.pokedex-page {
-  background-color: #f8f8f8;
-  border: 5px solid var(--pokedex-screen-border);
-  border-radius: 10px;
-  padding: 1rem;
-  width: 300px;
-  flex: 0 0 auto; /* Don't grow or shrink */
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.15);
-}
-
-
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {transform: translateY(-50%) translateX(0);}
-  40% {transform: translateY(-50%) translateX(-10px);}
-  60% {transform: translateY(-50%) translateX(-5px);}
-}
-
-.pokemon-display {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.pokemon-image-placeholder {
-  width: 100%;
-  height: 180px;
-  background-color: var(--pokedex-screen-bg);
-  border: 2px dashed var(--pokedex-screen-border);
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 1rem;
-  overflow: hidden;
-}
-
-.pokemon-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.pokemon-details-placeholder {
-  background-color: var(--pokedex-screen-bg);
-  border: 1px solid var(--pokedex-screen-border);
-  border-radius: 5px;
-  padding: 1rem;
-  flex-grow: 1;
-  color: var(--pokedex-text);
-}
-
-.pokemon-details-placeholder h4 {
-  margin-top: 0;
-  margin-bottom: 0.75rem;
-  color: var(--pokedex-dark-red);
-  border-bottom: 1px solid var(--pokedex-dark-red);
-  padding-bottom: 0.5rem;
-  font-size: 1.25rem;
-}
-
-.pokemon-details-placeholder p {
-  margin: 0.5rem 0;
-  line-height: 1.5;
-}
-
-.pokemon-details-placeholder strong {
-  color: var(--pokedex-dark-red);
-}
-
-.pokemon-stats {
-  margin: 1rem 0;
-}
-
-.stat-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.stat-bar label {
-  min-width: 60px;
-  font-size: 0.875rem;
-}
-
-.stat-bar progress {
-  flex-grow: 1;
-  height: 10px;
-  border-radius: 5px;
-  overflow: hidden;
-}
-
-.stat-bar progress::-webkit-progress-bar {
-  background-color: #e5e7eb;
-  border-radius: 5px;
-}
-
-.stat-bar progress::-webkit-progress-value {
-  background-color: var(--pokedex-red);
-  border-radius: 5px;
-}
-
-.stat-bar span {
-  min-width: 30px;
-  text-align: right;
-  font-size: 0.875rem;
-}
-
-/* Type colors */
-.type-normal { color: #A8A878; }
-.type-fire { color: #F08030; }
-.type-water { color: #6890F0; }
-.type-electric { color: #F8D030; }
-.type-grass { color: #78C850; }
-.type-ice { color: #98D8D8; }
-.type-fighting { color: #C03028; }
-.type-poison { color: #A040A0; }
-.type-ground { color: #E0C068; }
-.type-flying { color: #A890F0; }
-.type-psychic { color: #F85888; }
-.type-bug { color: #A8B820; }
-.type-rock { color: #B8A038; }
-.type-ghost { color: #705898; }
-.type-dragon { color: #7038F8; }
-.type-dark { color: #705848; }
-.type-steel { color: #B8B8D0; }
-.type-fairy { color: #EE99AC; }
-
-.legendary-tag, .mythical-tag {
-  display: inline-block;
-  margin-top: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 0.875rem;
-}
-
-.legendary-tag {
-  background-color: rgba(220, 38, 38, 0.1);
-  color: var(--pokedex-dark-red);
-}
-
-@media (max-width: 768px) {
-  .pokedex-device {
-    padding: 1rem;
-    gap: 1rem;
-  }
-
-  .pokedex-page {
-    width: 280px;
-  }
-}
 
 
 
