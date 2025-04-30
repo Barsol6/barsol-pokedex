@@ -1728,6 +1728,6 @@
         }
 
         .form-group{
-            max-width: inherit;
+            max-width: 100%;
         }
     }
