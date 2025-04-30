@@ -48,6 +48,3 @@ function setActiveComponent(componentName) {
 }
 </script>
 
-<style>
-
-</style>

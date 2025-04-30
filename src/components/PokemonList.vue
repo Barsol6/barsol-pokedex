@@ -516,6 +516,3 @@ function jumpToPokemon()
 
 
 </script>
-<style>
-
-</style>

@@ -667,9 +667,3 @@ function exportResults() {
 }
 
 </script>
-
-<style scoped>
-
-
-
-</style>
