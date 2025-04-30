@@ -185,7 +185,7 @@
             :key="pokemon.id"
         >
           <div class="pokemon-display">
-            <div class="pokemon-image-placeholder">
+            <div class="pokemon-image-">
               <img
                   :src="pokemon.sprite"
                   :alt="pokemon.name"
@@ -194,7 +194,7 @@
                   loading="lazy"
               >
             </div>
-            <div class="pokemon-details-placeholder">
+            <div class="pokemon-details-">
               <h4>#{{ pokemon.id.toString().padStart(3, '0') }} {{ capitalizeFirstLetter(pokemon.name) }}</h4>
               <p>
                 <strong>Type:</strong>
@@ -226,8 +226,8 @@
                   <span>{{ pokemon.stats.defense }}</span>
                 </div>
               </div>
-              <p v-if="pokemon.isLegendary" class="legendary-tag">★ Legendary</p>
-              <p v-if="pokemon.isMythical" class="mythical-tag">✦ Mythical</p>
+              <p v-if="pokemon.isLegendary===true" class="legendary-tag">★ Legendary</p>
+              <p v-if="pokemon.isMythical===true" class="mythical-tag">✦ Mythical</p>
             </div>
           </div>
         </div>
@@ -316,8 +316,8 @@ const hasSearchCriteria = computed(() => {
   return searchParams.value.name ||
       searchParams.value.type ||
       searchParams.value.generation ||
-      searchParams.value.isLegendary ||
-      searchParams.value.isMythical ||
+      searchParams.value.isLegendary===true ||
+      searchParams.value.isMythical===true ||
       searchParams.value.minHp !== null ||
       searchParams.value.minAttack !== null ||
       searchParams.value.minDefense !== null;
@@ -515,6 +515,15 @@ async function fetchPokemonDetails(url) {
     if (!response.ok) throw new Error('Failed to fetch');
     const data = await response.json();
 
+    let speciesData = {};
+    if(data.species?.url)
+    {
+    const speciesResponse = await fetch(data.species.url);
+    if(speciesResponse.ok){
+        speciesData = await   speciesResponse.json();
+    }
+    }
+
     const pokemonData = {
       id: data.id,
       name: data.name,
@@ -528,8 +537,8 @@ async function fetchPokemonDetails(url) {
         attack: data.stats?.find(s => s.stat.name === 'attack')?.base_stat || 0,
         defense: data.stats?.find(s => s.stat.name === 'defense')?.base_stat || 0
       },
-      isLegendary: false,
-      isMythical: false,
+      isLegendary: speciesData.is_legendary || false,
+      isMythical: speciesData.is_mythical || false,
       generation: determineGeneration(data.id)
     };
 
@@ -615,6 +624,15 @@ async function performSearch() {
             return false;
           }
 
+          if (searchParams.value.isLegendary && !pokemon.isLegendary) {
+            return false;
+          }
+
+          if (searchParams.value.isMythical && !pokemon.isMythical) {
+            return false;
+          }
+
+
           return true;
         });
 
@@ -647,6 +665,7 @@ function exportResults() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
 </script>
 
 <style scoped>

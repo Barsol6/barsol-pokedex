@@ -5,11 +5,12 @@
 
         <div class="pokedex-page" v-if="pokemonLeft">
           <div v-if="pokemonLeftDetails && pokemonLeftDetails.id !== undefined" class="pokemon-display">
-            <div class="pokemon-image-placeholder">
+            <div class="pokemon-image-" @mouseenter="initParticles($event, pokemonLeftDetails.types)" @mouseleave="destroyParticles">
               <img v-if="pokemonLeft.url" :src="getPokemonImage(pokemonLeft.url)" :alt="pokemonLeftDetails.name" class="pokemon-image">
               <span v-else>No Image URL</span>
+              <div :id="'particles-left-' + currentIndex" class="particles-container"></div>
             </div>
-            <div class="pokemon-details-placeholder">
+            <div class="pokemon-details-">
               <h4>#{{ pokemonLeftDetails.id.toString().padStart(3, '0') }} {{ capitalizeFirstLetter(pokemonLeftDetails.name) }}</h4>
               <p>
                 <strong>Type:</strong>
@@ -49,18 +50,19 @@
               <p v-if="pokemonLeftDetails.isMythical" class="mythical-tag">✦ Mythical</p>
             </div>
           </div>
-          <div v-else class="loading-placeholder">
+          <div v-else class="loading-">
             Loading {{ pokemonLeft.name ? capitalizeFirstLetter(pokemonLeft.name) : 'Pokemon' }}...
           </div>
         </div>
 
         <div class="pokedex-page" v-if="pokemonRight">
           <div v-if="pokemonRightDetails && pokemonRightDetails.id !== undefined" class="pokemon-display">
-            <div class="pokemon-image-placeholder">
+            <div class="pokemon-image-" @mouseenter="initParticles($event, pokemonRightDetails.types)" @mouseleave="destroyParticles">
               <img v-if="pokemonRight.url" :src="getPokemonImage(pokemonRight.url)" :alt="pokemonRightDetails.name" class="pokemon-image">
               <span v-else>No Image URL</span>
+              <div :id="'particles-right-' + currentIndex" class="particles-container"></div>
             </div>
-            <div class="pokemon-details-placeholder">
+            <div class="pokemon-details-">
               <h4>#{{ pokemonRightDetails.id.toString().padStart(3, '0') }} {{ capitalizeFirstLetter(pokemonRightDetails.name) }}</h4>
               <p>
                 <strong>Type:</strong>
@@ -100,14 +102,14 @@
               <p v-if="pokemonRightDetails.isMythical" class="mythical-tag">✦ Mythical</p>
             </div>
           </div>
-          <div v-else class="loading-placeholder">
+          <div v-else class="loading-">
             Loading {{ pokemonRight.name ? capitalizeFirstLetter(pokemonRight.name) : 'Pokemon' }}...
           </div>
         </div>
 
       </div>
     </div>
-    <div v-else class="loading-placeholder">
+    <div v-else class="loading-">
       Loading Pokémon List... (Ensure '@/assets/pokeApi.json' is valid)
     </div>
 
@@ -120,6 +122,19 @@
       >
         Next
       </button>
+
+      <div class="jump-to-container">
+        <input
+            type="number"
+            v-model.number="jumpToId"
+            min="1"
+            :max="pokemons.length"
+            placeholder="ID"
+            @keyup.enter="jumpToPokemon"
+            class="jump-input"
+        >
+        <button @click="jumpToPokemon" class="nav-button jump-button">Go</button>
+      </div>
 
     </div>
   </div>
@@ -149,6 +164,175 @@ const pokemonRightDetails = ref(null);
 
 const pokemonDetailsCache = ref({});
 
+const activeParticles = ref([]);
+
+const typeColors = {
+  normal: '#A8A878',
+  fire: '#F08030',
+  water: '#6890F0',
+  electric: '#F8D030',
+  grass: '#78C850',
+  ice: '#98D8D8',
+  fighting: '#C03028',
+  poison: '#A040A0',
+  ground: '#E0C068',
+  flying: '#A890F0',
+  psychic: '#F85888',
+  bug: '#A8B820',
+  rock: '#B8A038',
+  ghost: '#705898',
+  dragon: '#7038F8',
+  dark: '#705848',
+  steel: '#B8B8D0',
+  fairy: '#EE99AC'
+};
+
+const initParticles = (event, types) => {
+
+  if (!types || types.length === 0) return;
+
+
+  destroyParticles();
+  const isLeft = event.currentTarget.closest('.pokedex-page:first-child') !== null;
+  const id = isLeft ? `particles-left-${currentIndex.value}` : `particles-right-${currentIndex.value}`;
+
+  const container = document.getElementById(id);
+  if (container)
+  {
+    container.innerHTML = '';
+  }
+
+  const colors = types.map(type => typeColors[type] || '#FFFFFF');
+
+  const config = {
+    particles: {
+      number: {
+        value: 200,
+        density: {
+          enable: true,
+          value_area: 800
+        }
+      },
+      color: {
+        value: colors.length > 1 ? colors : colors[0]
+      },
+      shape: {
+        type: ['circle'],
+        stroke: {
+          width: 0,
+          color: '#000000'
+        },
+        polygon: {
+          nb_sides: 5
+        }
+      },
+      opacity: {
+        value: 0.7,
+        random: true,
+        anim: {
+          enable: true,
+          speed: 1,
+          opacity_min: 0.3,
+          sync: false
+        }
+      },
+      size: {
+        value: 6,
+        random: true,
+        anim: {
+          enable: true,
+          speed: 4,
+          size_min: 6,
+          sync: false
+        }
+      },
+      line_linked: {
+        enable: false,
+        distance: 200,
+        color: colors[0],
+        opacity: 0.6,
+        width: 1.5
+      },
+      move: {
+        enable: true,
+        speed: 7,
+        direction: 'none',
+        random: true,
+        straight: false,
+        out_mode: 'bounce',
+        bounce: true,
+        attract: {
+          enable: true,
+          rotateX: 600,
+          rotateY: 1200
+        }
+      }
+    },
+    interactivity: {
+      detect_on: 'canvas',
+      events: {
+        onhover: {
+          enable: true,
+          mode: ['grab','bubble']
+        },
+        onclick: {
+          enable: false,
+          mode: 'push'
+        },
+        resize: true
+      },
+      modes: {
+        grab: {
+          distance: 200,
+          line_linked: {
+            opacity: 1
+          }
+        },
+        push: {
+          particles_nb: 15
+        }
+      }
+    },
+    retina_detect: true
+  };
+
+  const particleInstance = particlesJS(id,config);
+  if(particleInstance)
+  {
+    activeParticles.value.push({
+      id,
+      instance: particleInstance
+    });
+  }
+
+};
+
+const destroyParticles = () => {
+  if (activeParticles.value.length > 0) {
+    activeParticles.value.forEach(particle => {
+      const container = document.getElementById(particle.id);
+      if (container) {
+        container.innerHTML = '';
+      }
+
+      if (particle.instance.pJSDom && particle.instance.pJSDom[0]) {
+        const pJS = particle.instance.pJSDom[0].pJS;
+        if (pJS.fn && pJS.fn.checkAnimFrame) {
+          cancelAnimationFrame(pJS.fn.checkAnimFrame);
+        }
+        pJS.particles = [];
+        pJS.particles.array = [];
+      }
+    });
+
+    activeParticles.value = [];
+  }
+  document.querySelectorAll('.particles-js-canvas-el').forEach(canvas => {
+    canvas.remove();
+  });
+};
+
+
 async function fetchPokemonDetails() {
   pokemonLeftDetails.value = null;
   pokemonRightDetails.value = null;
@@ -163,6 +347,16 @@ async function fetchPokemonDetails() {
         const response = await fetch(leftPoke.url);
         if (!response.ok) throw new Error(`Failed to fetch ${leftPoke.name}`);
         const data = await response.json();
+
+        let speciesData = {};
+        if(data.species?.url)
+        {
+          const speciesResponse = await fetch(data.species.url);
+          if(speciesResponse.ok){
+            speciesData = await   speciesResponse.json();
+          }
+        }
+
         const details = {
           id: data.id,
           name: data.name,
@@ -176,8 +370,8 @@ async function fetchPokemonDetails() {
             attack: data.stats?.find(s => s.stat.name === 'attack')?.base_stat || 0,
             defense: data.stats?.find(s => s.stat.name === 'defense')?.base_stat || 0,
           },
-          isLegendary: false,
-          isMythical: false
+          isLegendary: speciesData.is_legendary,
+          isMythical: speciesData.is_mythical
         };
         pokemonDetailsCache.value[leftPoke.url] = details;
         pokemonLeftDetails.value = details;
@@ -194,6 +388,15 @@ async function fetchPokemonDetails() {
         if (!response.ok) throw new Error(`Failed to fetch ${rightPoke.name}`);
         const data = await response.json();
 
+        let speciesData = {};
+        if(data.species?.url)
+        {
+          const speciesResponse = await fetch(data.species.url);
+          if(speciesResponse.ok){
+            speciesData = await   speciesResponse.json();
+          }
+        }
+
         const details = {
           id: data.id,
           name: data.name,
@@ -207,8 +410,8 @@ async function fetchPokemonDetails() {
             attack: data.stats?.find(s => s.stat.name === 'attack')?.base_stat || 0,
             defense: data.stats?.find(s => s.stat.name === 'defense')?.base_stat || 0,
           },
-          isLegendary: false,
-          isMythical: false
+          isLegendary: speciesData.is_legendary,
+          isMythical: speciesData.is_mythical
         };
         pokemonDetailsCache.value[rightPoke.url] = details;
         pokemonRightDetails.value = details;
@@ -267,7 +470,7 @@ function checkIfMobile() {
 }
 
 onMounted(() => {
-  checkIfMobile(); // Initial check
+  checkIfMobile();
   window.addEventListener('resize', checkIfMobile);
 });
 
@@ -292,6 +495,24 @@ function formatAbilities(abilities) {
 
 watch(currentIndex, fetchPokemonDetails, { immediate: true });
 
+const jumpToId = ref('');
+
+function jumpToPokemon()
+{
+  if (!jumpToId.value || isNaN(jumpToId.value)) return;
+  const id = Math.max(1,Math.min(Number(jumpToId.value),pokemons.value.length));
+
+  const foundIndex = pokemons.value.findIndex(p=>{
+    const pokemonId = extractIdFromUrl(p.url);
+    return pokemonId && Number(pokemonId) ===id;
+  });
+
+  if (foundIndex!==-1)
+  {
+    currentIndex.value=foundIndex;
+    jumpToId.value = '';
+  }
+}
 
 
 </script>
